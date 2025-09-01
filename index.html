@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- mobile scaling -->
-  <title>Mobile Geolocation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mobile Geolocation (Screen Always On)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -25,17 +25,17 @@
       color: white;
       cursor: pointer;
       margin: 10px;
-      width: 45%; /* buttons scale nicely side by side */
+      width: 45%;
     }
     button:hover {
       background-color: #0056b3;
     }
     #demo {
       margin-top: 25px;
-      font-size: 26px;   /* larger for readability */
+      font-size: 26px;
       font-weight: bold;
       color: #222;
-      word-wrap: break-word; /* prevent overflow */
+      word-wrap: break-word;
     }
   </style>
 </head>
@@ -52,19 +52,21 @@
   <script>
     const x = document.getElementById("demo");
     let watchId = null;
+    let wakeLock = null;
 
-    // Automatically start tracking when the page loads
+    // Automatically start tracking when page loads
     window.onload = function() {
       startTracking();
+      enableWakeLock();
     };
 
     function startTracking() {
       if (navigator.geolocation) {
         if (watchId === null) {
           const options = {
-            enableHighAccuracy: true,   // more accurate GPS (uses more battery)
-            timeout: 10000,            // max wait 10s for position
-            maximumAge: 5000           // reuse last fix if <5s old
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 5000
           };
           watchId = navigator.geolocation.watchPosition(success, error, options);
           x.innerHTML = "Starting location tracking...";
@@ -108,9 +110,35 @@
         navigator.geolocation.clearWatch(watchId);
         x.innerHTML += "<br><span style='color:red'><b>Tracking stopped.</b></span>";
         watchId = null;
+        disableWakeLock();
+      }
+    }
+
+    // ===== Keep screen awake (Android / Chrome) =====
+    async function enableWakeLock() {
+      try {
+        if ("wakeLock" in navigator) {
+          wakeLock = await navigator.wakeLock.request("screen");
+          console.log("Screen Wake Lock active");
+          wakeLock.addEventListener("release", () => {
+            console.log("Screen Wake Lock released");
+          });
+        }
+      } catch (err) {
+        console.error("Wake Lock failed:", err);
+      }
+    }
+
+    function disableWakeLock() {
+      if (wakeLock !== null) {
+        wakeLock.release();
+        wakeLock = null;
       }
     }
   </script>
 
 </body>
 </html>
+>
+</html>
+
